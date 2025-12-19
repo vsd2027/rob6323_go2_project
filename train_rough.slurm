@@ -112,7 +112,7 @@ LATEST_DIR="${LATEST_DIR%/}"
 # Run evaluation with the discovered checkpoint
 /isaac-sim/python.sh /workspace/run/scripts/rsl_rl/play.py \
   --task=Template-Rob6323-Go2-Rough-v0 \
-  --checkpoint "${LATEST_DIR}/model_1499.pt" \
+  --checkpoint "${LATEST_DIR}/model_499.pt" \
   --video \
   --video_length 1000 \
   --headless
