@@ -14,12 +14,14 @@ from isaaclab.scene import InteractiveSceneCfg
 from isaaclab.sim import SimulationCfg
 from isaaclab.utils import configclass
 from isaaclab.terrains import TerrainImporterCfg
-from isaaclab.sensors import ContactSensorCfg
+from isaaclab.sensors import ContactSensorCfg, RayCasterCfg, patterns
 from isaaclab.markers import VisualizationMarkersCfg
 from isaaclab.markers.config import BLUE_ARROW_X_MARKER_CFG, FRAME_MARKER_CFG, GREEN_ARROW_X_MARKER_CFG
 
 from isaaclab.managers import EventTermCfg as EventTerm #adding for friction randomization
 from isaaclab.managers import SceneEntityCfg #for finding all bodies with name robot
+
+from isaaclab.terrains.config.rough import ROUGH_TERRAINS_CFG #terrain
 
 # took from documentation https://isaac-sim.github.io/IsaacLab/main/source/tutorials/03_envs/create_direct_rl_env.html
 @configclass
@@ -38,7 +40,7 @@ class EventCfg:
   )
 
 @configclass
-class Rob6323Go2EnvCfg(DirectRLEnvCfg):
+class Rob6323Go2EnvRoughCfg(DirectRLEnvCfg):
     # env
     decimation = 4
     episode_length_s = 20.0
@@ -46,7 +48,7 @@ class Rob6323Go2EnvCfg(DirectRLEnvCfg):
     action_scale = 0.25
     action_space = 12
     # add 4 for clock phase input for feet placement -- part-4
-    observation_space = 48 + 4
+    observation_space = 48 + 4 + 160 # 0.1 resolution 1.6height 1.0 width raycaster height scanner
     state_space = 0
     debug_vis = True
     # part -- 3 - terminate condition
@@ -79,17 +81,33 @@ class Rob6323Go2EnvCfg(DirectRLEnvCfg):
     )
     terrain = TerrainImporterCfg(
         prim_path="/World/ground",
-        terrain_type="plane",
+        terrain_type="generator",
+        terrain_generator=ROUGH_TERRAINS_CFG,
+        max_init_terrain_level=9,
         collision_group=-1,
         physics_material=sim_utils.RigidBodyMaterialCfg(
             friction_combine_mode="multiply",
             restitution_combine_mode="multiply",
             static_friction=1.0,
             dynamic_friction=1.0,
-            restitution=0.0,
+        ),
+        visual_material=sim_utils.MdlFileCfg(
+            mdl_path="{NVIDIA_NUCLEUS_DIR}/Materials/Base/Architecture/Shingles_01.mdl",
+            project_uvw=True,
         ),
         debug_vis=False,
     )
+
+    # we add a height scanner for perceptive locomotion --> from anymal c
+    height_scanner = RayCasterCfg(
+        prim_path="/World/envs/env_.*/Robot/base",
+        offset=RayCasterCfg.OffsetCfg(pos=(0.0, 0.0, 20.0)),
+        ray_alignment="yaw",
+        pattern_cfg=patterns.GridPatternCfg(resolution=0.1, size=[1.6, 1.0]),
+        debug_vis=False,
+        mesh_prim_paths=["/World/ground"],
+    )
+
     # robot(s)
     robot_cfg: ArticulationCfg = UNITREE_GO2_CFG.replace(prim_path="/World/envs/env_.*/Robot")
 
@@ -122,15 +140,15 @@ class Rob6323Go2EnvCfg(DirectRLEnvCfg):
     current_vel_visualizer_cfg.markers["arrow"].scale = (0.5, 0.5, 0.5)
 
     # reward scales
-    lin_vel_reward_scale = 0.9 #decreased the reward, as giving high variance gradient
+    lin_vel_reward_scale = 1.0 #decreased the reward, as giving high variance gradient
     yaw_rate_reward_scale = 0.5
     #part-1 change
     action_rate_reward_scale = -0.1
     #part--4
-    raibert_heuristic_reward_scale = -10.0
+    raibert_heuristic_reward_scale = -1.0
     #part --5 unnatural walking penalties
-    orient_reward_scale = -5.0
-    lin_vel_z_reward_scale = -0.02
+    orient_reward_scale = -0.0 #we can't use projected gravity for checking parallelness with ground 
+    lin_vel_z_reward_scale = -0.002 
     dof_vel_reward_scale = -0.0003 #increased penalty for fast joint motion
     ang_vel_xy_reward_scale = -0.001
     #part --6 contact forces and foot clearance
