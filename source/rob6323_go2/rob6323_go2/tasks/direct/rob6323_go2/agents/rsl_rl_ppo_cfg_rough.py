@@ -10,8 +10,8 @@ from isaaclab_rl.rsl_rl import RslRlOnPolicyRunnerCfg, RslRlPpoActorCriticCfg, R
 #parameters taken from anymal c
 @configclass
 class PPORunnerCfg(RslRlOnPolicyRunnerCfg):
-    num_steps_per_env = 32
-    max_iterations = 500
+    num_steps_per_env = 24
+    max_iterations = 1000
     save_interval = 50
     experiment_name = "go2_rough_direct"
     policy = RslRlPpoActorCriticCfg(

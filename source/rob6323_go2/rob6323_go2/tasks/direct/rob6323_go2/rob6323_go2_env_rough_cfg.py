@@ -121,7 +121,7 @@ class Rob6323Go2EnvRoughCfg(DirectRLEnvCfg):
     )
 
     # scene
-    scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=256, env_spacing=4.0, replicate_physics=True)
+    scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=1024, env_spacing=4.0, replicate_physics=True)
     contact_sensor: ContactSensorCfg = ContactSensorCfg(
         prim_path="/World/envs/env_.*/Robot/.*", history_length=3, update_period=0.005, track_air_time=True
     )
